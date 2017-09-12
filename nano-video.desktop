@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Nano Video
+Comment=Play video
+Exec=nano-video
+Icon=nano-video
+Terminal=false
+StartupNotify=true
+Categories=Video
+MimeType=video/mp4

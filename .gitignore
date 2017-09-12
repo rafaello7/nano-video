@@ -1,0 +1,17 @@
+*.o
+Makefile
+Makefile.in
+.deps/
+/aclocal.m4
+/autom4te.cache/
+/compile
+/config.status
+/configure
+/config.log
+/depcomp
+/dpkg-deb/
+/install-sh
+/missing
+/nano-video-*.tar.gz
+/src/nano-video
+/src/resources.c

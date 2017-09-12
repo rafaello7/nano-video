@@ -1,0 +1,12 @@
+Source: nano-video
+Section: video
+Priority: optional
+Maintainer: Rafal <fatwildcat@gmail.com>
+Build-Depends: debhelper (>= 9), autotools-dev
+Standards-Version: 3.9.8
+Homepage: https://github.com/rafaello7/nano-video
+
+Package: nano-video
+Architecture: arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Play video on NanoPi

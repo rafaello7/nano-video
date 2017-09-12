@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <template class="NanoVideoWindow" parent="GtkApplicationWindow">
+    <property name="can_focus">False</property>
+    <property name="default_width">640</property>
+    <property name="default_height">384</property>
+    <signal name="configure-event" handler="on_NanoVideoWindow_configure_event" swapped="no"/>
+    <signal name="window-state-event" handler="on_NanoVideoWindow_window_state_event" swapped="no"/>
+    <child>
+      <object class="GtkDrawingArea" id="drawingArea">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <signal name="draw" handler="on_drawingArea_draw" swapped="no"/>
+      </object>
+    </child>
+  </template>
+</interface>
