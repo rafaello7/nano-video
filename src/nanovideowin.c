@@ -280,17 +280,29 @@ gboolean on_NanoVideoWindow_window_state_event(GtkWidget *widget,
 		GdkEvent *event, gpointer user_data)
 {
     NanoVideoWindowPrivate *priv;
-	gint x, y;
+	gint winx, winy, x, y, width, height;
 
 	/* handle fullscreen mode; in fullscreen mode the video layer z-order
 	 * is changed in MLC of the s5p6818 soc from lowest to highest */
 	priv = nanovideo_window_get_instance_private(NANOVIDEO_WINDOW(widget));
 	priv->isFullScreen = event->window_state.new_window_state &
 		GDK_WINDOW_STATE_FULLSCREEN;
-	gdk_window_get_position(event->window_state.window, &x, &y);
-	setVideoLayerCoord(priv, x, y,
-			gdk_window_get_width(event->window_state.window),
-			gdk_window_get_height(event->window_state.window));
+	gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(widget),
+			!priv->isFullScreen);
+	gdk_window_get_position(event->window_state.window, &winx, &winy);
+	width = gdk_window_get_width(event->window_state.window);
+	height = gdk_window_get_height(event->window_state.window);
+	if( priv->isFullScreen ) {
+		x = winx;
+		y = winy;
+	}else{
+		// keep the video layer inside drawing area widget
+		gtk_widget_translate_coordinates(GTK_WIDGET(priv->drawingArea),
+				widget, winx, winy, &x, &y);
+		width -= x - winx;
+		height -= y - winy;
+	}
+	setVideoLayerCoord(priv, x, y, width, height);
 	adjustVideoLayerPriority(priv);
 	return FALSE;
 }
