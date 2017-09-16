@@ -19,6 +19,7 @@ typedef struct {
 	GstElement *playbin;
 	GstElement *videosink;
 	GtkDrawingArea *drawingArea;
+	GdkCursor *fullscreenCursor;
 	guint videoWidth, videoHeight;
 	GstState desiredState;
 	gboolean isFullScreen;
@@ -102,27 +103,36 @@ static void on_drawingArea_realize(GtkWidget *drawingArea, gpointer user_data)
 			window_handle);
 }
 
+/* v4l2sink bug workaround: the sink unlock function may cause inability
+ * to resume video play after pause
+ */
 static void clearVideoSinkUnlockFuncs(GstElement *videosink)
 {
 	GstBaseSinkClass *videoSinkClass;
 
-	/* v4l2sink bug workaround: the sink unlock function may cause inability
-	 * to resume video play after pause
-	 */
 	videoSinkClass = GST_BASE_SINK_CLASS(G_OBJECT_GET_CLASS(
 				G_OBJECT(videosink)));
 	videoSinkClass->unlock = NULL;
 	videoSinkClass->unlock_stop = NULL;
 }
 
-static void adjustVideoLayerPriority(NanoVideoWindowPrivate *priv)
+/* Set z-order position of video layer:
+ *	0 - covers cursor layer
+ *	1, 2 - between primary desktop layer and cursor layer
+ *	3 - covered by primary desktop layer
+ * Note that this is hardware layer independent from X-window z-order.
+ * X-windows server is drawing windows on primary desktop layer.  Cusror
+ * hardware layer is used for drawing cursor.  Lower hardware layer may be
+ * revealed by higher one using transparent color.
+ */
+static void setVideoLayerPriority(NanoVideoWindowPrivate *priv, int priority)
 {
 	GstStructure *extraControls;
 
 	if( priv->videosink == NULL )
 		return;
 	extraControls = gst_structure_new("extra-controls", "video_layer_z_order",
-			G_TYPE_INT, priv->isFullScreen ? 0 : 3, NULL);
+			G_TYPE_INT, priority, NULL);
 	g_object_set(priv->videosink, "extra-controls", extraControls, NULL);
 	gst_structure_free(extraControls);
 }
@@ -147,24 +157,28 @@ static void nanovideo_window_init(NanoVideoWindow *win)
 
     gtk_widget_init_template(GTK_WIDGET(win));
     priv = nanovideo_window_get_instance_private(win);
+	priv->videosink = NULL;
 	priv->playbin = gst_element_factory_make ("playbin", "playbin");
 	if( priv->playbin ) {
 		bus = gst_element_get_bus (priv->playbin);
 		gst_bus_add_signal_watch (bus);
 		g_signal_connect(G_OBJECT(bus), "message::error",
 				(GCallback)error_cb, win);
-		/* Use video layer of s5p6818 soc to render video. The video layer
-		 * is available as /dev/video1. Use v4l2sink to control the layer */
-		priv->videosink = gst_element_factory_make ("v4l2sink", "v4l2sink");
-		if( priv->videosink ) {
-			clearVideoSinkUnlockFuncs(priv->videosink);
-			g_object_set(priv->videosink, "io-mode", 4, NULL);
-			g_object_set(priv->playbin, "video-sink", priv->videosink, NULL);
-			g_signal_connect(G_OBJECT (bus), "message::state-changed",
-					(GCallback)state_changed_cb, win);
-			g_signal_connect(G_OBJECT (priv->playbin), "element-setup",
-					(GCallback)element_setup, NULL);
-		}else{
+		if( g_file_test("/dev/video1", G_FILE_TEST_EXISTS) ) {
+			/* Use video layer of s5p6818 soc to render video. The video layer
+			 * is available as /dev/video1. Use v4l2sink to control the layer */
+			priv->videosink = gst_element_factory_make ("v4l2sink", "v4l2sink");
+			if( priv->videosink ) {
+				clearVideoSinkUnlockFuncs(priv->videosink);
+				g_object_set(priv->videosink, "io-mode", 4, NULL);
+				g_object_set(priv->playbin, "video-sink", priv->videosink, NULL);
+				g_signal_connect(G_OBJECT (bus), "message::state-changed",
+						(GCallback)state_changed_cb, win);
+				g_signal_connect(G_OBJECT (priv->playbin), "element-setup",
+						(GCallback)element_setup, NULL);
+			}
+		}
+		if( priv->videosink == NULL ) {
 			/* fallback */
 			g_signal_connect(priv->drawingArea, "realize",
 					G_CALLBACK(on_drawingArea_realize), win);
@@ -173,7 +187,8 @@ static void nanovideo_window_init(NanoVideoWindow *win)
 	priv->videoWidth = priv->videoHeight = 0;
 	priv->desiredState = GST_STATE_NULL;
 	priv->isFullScreen = FALSE;
-	adjustVideoLayerPriority(priv);
+	priv->fullscreenCursor = NULL;
+	setVideoLayerPriority(priv, 3);
 }
 
 static void nanovideo_window_dispose(GObject *object)
@@ -186,15 +201,18 @@ static void nanovideo_window_dispose(GObject *object)
      */
     win = NANOVIDEO_WINDOW(object);
     priv = nanovideo_window_get_instance_private(win);
-	if( priv->isFullScreen ) {
-		priv->isFullScreen = FALSE;
-		adjustVideoLayerPriority(priv);
-	}
+	// restore priority
 	if( priv->playbin ) {
+		setVideoLayerPriority(priv, 2);
 		priv->desiredState = GST_STATE_NULL;
 		gst_element_set_state(priv->playbin, priv->desiredState);
 		gst_object_unref(priv->playbin);
 		priv->playbin = NULL;
+		priv->videosink = NULL;
+	}
+	if( priv->fullscreenCursor ) {
+		g_object_unref(G_OBJECT(priv->fullscreenCursor));
+		priv->fullscreenCursor = NULL;
 	}
     G_OBJECT_CLASS(nanovideo_window_parent_class)->dispose(object);
 }
@@ -281,6 +299,7 @@ gboolean on_NanoVideoWindow_window_state_event(GtkWidget *widget,
 {
     NanoVideoWindowPrivate *priv;
 	gint winx, winy, x, y, width, height;
+	GdkWindow *gdkWin;
 
 	/* handle fullscreen mode; in fullscreen mode the video layer z-order
 	 * is changed in MLC of the s5p6818 soc from lowest to highest */
@@ -289,6 +308,17 @@ gboolean on_NanoVideoWindow_window_state_event(GtkWidget *widget,
 		GDK_WINDOW_STATE_FULLSCREEN;
 	gtk_application_window_set_show_menubar(GTK_APPLICATION_WINDOW(widget),
 			!priv->isFullScreen);
+	gdkWin = gtk_widget_get_window(GTK_WIDGET(priv->drawingArea));
+	if( gdkWin != NULL ) {
+		if( priv->isFullScreen ) {
+			// make cursor invisible
+			if( priv->fullscreenCursor == NULL )
+				priv->fullscreenCursor = gdk_cursor_new_for_display(
+						gdk_window_get_display(gdkWin), GDK_BLANK_CURSOR);
+			gdk_window_set_cursor(gdkWin, priv->fullscreenCursor);
+		}else
+			gdk_window_set_cursor(gdkWin, NULL);
+	}
 	gdk_window_get_position(event->window_state.window, &winx, &winy);
 	width = gdk_window_get_width(event->window_state.window);
 	height = gdk_window_get_height(event->window_state.window);
@@ -303,7 +333,6 @@ gboolean on_NanoVideoWindow_window_state_event(GtkWidget *widget,
 		height -= y - winy;
 	}
 	setVideoLayerCoord(priv, x, y, width, height);
-	adjustVideoLayerPriority(priv);
 	return FALSE;
 }
 
