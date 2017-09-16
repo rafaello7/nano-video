@@ -12,7 +12,7 @@
             </section>
             <section>
                 <item>
-                    <attribute name="label">Open Location from _Clipboard</attribute>
+                    <attribute name="label">Play URI from _Clipboard</attribute>
                     <attribute name="action">app.open-clipboard</attribute>
                     <attribute name="accel">&lt;Primary&gt;v</attribute>
                 </item>
