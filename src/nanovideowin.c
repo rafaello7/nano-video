@@ -118,8 +118,8 @@ static void clearVideoSinkUnlockFuncs(GstElement *videosink)
 
 /* Set z-order position of video layer:
  *	0 - covers cursor layer
- *	1, 2 - between primary desktop layer and cursor layer
- *	3 - covered by primary desktop layer
+ *	1 - between primary desktop layer and cursor layer
+ *	2, 3 - covered by primary desktop layer
  * Note that this is hardware layer independent from X-window z-order.
  * X-windows server is drawing windows on primary desktop layer.  Cusror
  * hardware layer is used for drawing cursor.  Lower hardware layer may be
@@ -203,7 +203,7 @@ static void nanovideo_window_dispose(GObject *object)
     priv = nanovideo_window_get_instance_private(win);
 	// restore priority
 	if( priv->playbin ) {
-		setVideoLayerPriority(priv, 2);
+		setVideoLayerPriority(priv, 1);
 		priv->desiredState = GST_STATE_NULL;
 		gst_element_set_state(priv->playbin, priv->desiredState);
 		gst_object_unref(priv->playbin);
