@@ -9,4 +9,6 @@ Homepage: https://github.com/rafaello7/nano-video
 Package: nano-video
 Architecture: arm64
 Depends: ${shlibs:Depends}, ${misc:Depends}, gstreamer1.0-plugins-good
+Recommends: gstreamer1.0-plugins-bad
+Suggests: gstreamer1.0-pulseaudio
 Description: Play video on NanoPi
