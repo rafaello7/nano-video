@@ -99,6 +99,8 @@ static void paste_received(GtkClipboard *clipboard,
 {
 	gchar *uri = NULL;
 
+	if( text == NULL )
+		return;
 	if( text[0] == '/' ) {
 		uri = g_strdup_printf("file://%s", text);
 		text = uri;
