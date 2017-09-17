@@ -12,6 +12,11 @@
             </section>
             <section>
                 <item>
+                    <attribute name="label">Play URI from _Selection</attribute>
+                    <attribute name="action">app.open-selection</attribute>
+                    <attribute name="accel">&lt;Shift&gt;Insert</attribute>
+                </item>
+                <item>
                     <attribute name="label">Play URI from _Clipboard</attribute>
                     <attribute name="action">app.open-clipboard</attribute>
                     <attribute name="accel">&lt;Primary&gt;v</attribute>

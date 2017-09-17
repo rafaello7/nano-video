@@ -351,12 +351,24 @@ gboolean on_drawingArea_draw(GtkWidget *drawing, cairo_t *cr,
 void nanovideo_windowPlayUri(NanoVideoWindow *win, const gchar *uri)
 {
     NanoVideoWindowPrivate *priv;
+	char *unescaped, *title;
+	const char *basename;
 
     priv = nanovideo_window_get_instance_private(win);
 	if( priv->playbin == NULL )
 		return;
 	gst_element_set_state(priv->playbin, GST_STATE_NULL);
 	priv->videoWidth = priv->videoHeight = 0;
+	basename = strrchr(uri, '/');
+	if( basename )
+		++basename;
+	else
+		basename = uri;
+	unescaped = g_uri_unescape_string(basename, NULL);
+	title = g_strdup_printf("%s - Nano Video", unescaped);
+	g_free(unescaped);
+	gtk_window_set_title(GTK_WINDOW(win), title);
+	g_free(title);
 	g_object_set (priv->playbin, "uri", uri, NULL);
 	priv->desiredState = GST_STATE_PLAYING;
 	gst_element_set_state(priv->playbin, priv->desiredState);

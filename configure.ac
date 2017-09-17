@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([nano-video], [0.2], [fatwildcat@gmail.com])
+AC_INIT([nano-video], [0.3], [fatwildcat@gmail.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([src/nanovideo.c])
 

@@ -109,6 +109,18 @@ static void paste_received(GtkClipboard *clipboard,
 	g_free(uri);
 }
 
+static void on_menu_open_selection(GSimpleAction *action, GVariant *parameter,
+        gpointer app)
+{
+    NanoVideoAppPrivate *priv;
+	GtkClipboard *clipboard;
+
+	priv = nanovideo_app_get_instance_private(NANOVIDEO_APP(app));
+	clipboard = gtk_widget_get_clipboard(GTK_WIDGET(priv->win),
+			GDK_SELECTION_PRIMARY);
+	gtk_clipboard_request_text(clipboard, paste_received, priv->win);
+}
+
 static void on_menu_open_clipboard(GSimpleAction *action, GVariant *parameter,
         gpointer app)
 {
@@ -158,6 +170,7 @@ NanoVideoApp *nanovideo_appNew(void)
 {
     static GActionEntry app_entries[] = {
         { "open", on_menu_open, NULL, NULL, NULL },
+        { "open-selection", on_menu_open_selection, NULL, NULL, NULL },
         { "open-clipboard", on_menu_open_clipboard, NULL, NULL, NULL },
         { "quit", on_menu_quit, NULL, NULL, NULL },
         { "pause-resume", on_menu_pause_resume, NULL, NULL, NULL },
