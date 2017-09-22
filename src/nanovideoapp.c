@@ -151,6 +151,15 @@ static void on_menu_pause_resume(GSimpleAction *action, GVariant *parameter,
     nanovideo_windowPauseResume(priv->win);
 }
 
+static void on_menu_show_controls(GSimpleAction *action, GVariant *parameter,
+        gpointer app)
+{
+	NanoVideoAppPrivate *priv;
+
+	priv = nanovideo_app_get_instance_private(NANOVIDEO_APP(app));
+    nanovideo_windowShowControls(priv->win);
+}
+
 static void on_menu_fullscreen(GSimpleAction *action, GVariant *parameter,
         gpointer app)
 {
@@ -174,6 +183,7 @@ NanoVideoApp *nanovideo_appNew(void)
         { "open-clipboard", on_menu_open_clipboard, NULL, NULL, NULL },
         { "quit", on_menu_quit, NULL, NULL, NULL },
         { "pause-resume", on_menu_pause_resume, NULL, NULL, NULL },
+        { "show-controls", on_menu_show_controls, NULL, NULL, NULL },
         { "fullscreen", on_menu_fullscreen, NULL, NULL, NULL },
     };
 	NanoVideoApp *app;

@@ -1,6 +1,7 @@
 <gresources>
   <gresource prefix="/org/rafaello7/nanovideo">
     <file preprocess="xml-stripblanks">nanovideowin.ui</file>
+    <file preprocess="xml-stripblanks">videocontrolswin.ui</file>
 	<file preprocess="xml-stripblanks">menubar.ui</file>
     <file>nano-video.svg</file>
   </gresource>

@@ -1,10 +1,10 @@
-UI =  nanovideowin.ui menubar.ui
+UI =  nanovideowin.ui menubar.ui videocontrolswin.ui
 IMG = nano-video.svg 
 
 bin_PROGRAMS = nano-video
 
-nano_video_SOURCES = nanovideo.c nanovideoapp.c nanovideowin.c \
-					nanovideoapp.h nanovideowin.h \
+nano_video_SOURCES = nanovideo.c nanovideoapp.c nanovideowin.c videocontrolswin.c \
+					nanovideoapp.h nanovideowin.h videocontrolswin.h \
 					nanovideo.gresource.xml \
 					$(UI) $(IMG)
 

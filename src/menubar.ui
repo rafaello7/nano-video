@@ -31,12 +31,19 @@
             </section>
         </submenu>
         <submenu>
-            <attribute name="label">_Play</attribute>
+            <attribute name="label">_Video</attribute>
             <section>
                 <item>
 					<attribute name="label">_Pause/Resume</attribute>
                     <attribute name="action">app.pause-resume</attribute>
 					<attribute name="accel">space</attribute>
+                </item>
+            </section>
+            <section>
+                <item>
+					<attribute name="label">_Show Controls</attribute>
+                    <attribute name="action">app.show-controls</attribute>
+					<attribute name="accel">F5</attribute>
                 </item>
             </section>
         </submenu>

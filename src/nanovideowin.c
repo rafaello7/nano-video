@@ -4,6 +4,7 @@
 #include <gst/video/videooverlay.h>
 #include <gst/base/gstbasesink.h>
 #include "nanovideowin.h"
+#include "videocontrolswin.h"
 #include <string.h>
 
 
@@ -23,6 +24,7 @@ typedef struct {
 	guint videoWidth, videoHeight;
 	GstState desiredState;
 	gboolean isFullScreen;
+	VideoControlsWindow *controlswin;
 } NanoVideoWindowPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(NanoVideoWindow, nanovideo_window,
@@ -125,16 +127,9 @@ static void clearVideoSinkUnlockFuncs(GstElement *videosink)
  * hardware layer is used for drawing cursor.  Lower hardware layer may be
  * revealed by higher one using transparent color.
  */
-static void setVideoLayerPriority(NanoVideoWindowPrivate *priv, int priority)
+static void setVideoLayerPriority(NanoVideoWindow *win, int priority)
 {
-	GstStructure *extraControls;
-
-	if( priv->videosink == NULL )
-		return;
-	extraControls = gst_structure_new("extra-controls", "video_layer_z_order",
-			G_TYPE_INT, priority, NULL);
-	g_object_set(priv->videosink, "extra-controls", extraControls, NULL);
-	gst_structure_free(extraControls);
+	nanovideo_windowSetExtraControlParam(win, "layer_z_order", priority);
 }
 
 static void element_setup(GstElement *object, GstElement *arg0,
@@ -188,7 +183,8 @@ static void nanovideo_window_init(NanoVideoWindow *win)
 	priv->desiredState = GST_STATE_NULL;
 	priv->isFullScreen = FALSE;
 	priv->fullscreenCursor = NULL;
-	setVideoLayerPriority(priv, 3);
+	setVideoLayerPriority(win, 3);
+	priv->controlswin = NULL;
 }
 
 static void nanovideo_window_dispose(GObject *object)
@@ -201,9 +197,13 @@ static void nanovideo_window_dispose(GObject *object)
      */
     win = NANOVIDEO_WINDOW(object);
     priv = nanovideo_window_get_instance_private(win);
+	if( priv->controlswin ) {
+		gtk_window_close(GTK_WINDOW(priv->controlswin));
+		priv->controlswin = NULL;
+	}
 	// restore priority
 	if( priv->playbin ) {
-		setVideoLayerPriority(priv, 1);
+		setVideoLayerPriority(win, 1);
 		priv->desiredState = GST_STATE_NULL;
 		gst_element_set_state(priv->playbin, priv->desiredState);
 		gst_object_unref(priv->playbin);
@@ -392,6 +392,72 @@ void nanovideo_windowPauseResume(NanoVideoWindow *win)
 	default:
 		break;
 	}
+}
+
+void nanovideo_windowShowControls(NanoVideoWindow *win)
+{
+    NanoVideoWindowPrivate *priv;
+
+    priv = nanovideo_window_get_instance_private(win);
+	if( priv->controlswin == NULL )
+		priv->controlswin = videocontrols_windowNew(win);
+    gtk_widget_show_all(GTK_WIDGET(priv->controlswin));
+}
+
+gint nanovideo_windowGetControlParam(NanoVideoWindow *win,
+		const char *paramName)
+{
+    NanoVideoWindowPrivate *priv;
+	gint value;
+
+    priv = nanovideo_window_get_instance_private(win);
+	if( priv->videosink == NULL )
+		return 0;
+	g_object_get(priv->videosink, paramName, &value, NULL);
+	return value;
+}
+
+void nanovideo_windowSetControlParam(NanoVideoWindow *win,
+		const char *paramName, gint value)
+{
+    NanoVideoWindowPrivate *priv;
+
+    priv = nanovideo_window_get_instance_private(win);
+	if( priv->videosink == NULL )
+		return;
+	g_object_set(priv->videosink, paramName, value, NULL);
+}
+
+gint nanovideo_windowGetExtraControlParam(NanoVideoWindow *win,
+		const char *paramName)
+{
+    NanoVideoWindowPrivate *priv;
+	GstStructure *extraControls = NULL;
+	gint value;
+
+    priv = nanovideo_window_get_instance_private(win);
+	if( priv->videosink == NULL )
+		return 0;
+	g_object_get(priv->videosink, "extra-controls", &extraControls, NULL);
+	if( !gst_structure_get(extraControls, paramName, G_TYPE_INT, &value, NULL) )
+		value = 0;
+	gst_structure_free(extraControls);
+	return value;
+}
+
+void nanovideo_windowSetExtraControlParam(NanoVideoWindow *win,
+		const char *paramName, gint value)
+{
+    NanoVideoWindowPrivate *priv;
+	GstStructure *extraControls;
+
+    priv = nanovideo_window_get_instance_private(win);
+	if( priv->videosink == NULL )
+		return;
+	extraControls = gst_structure_new("extra-controls", paramName,
+			G_TYPE_INT, value, NULL);
+	g_object_set(priv->videosink, "extra-controls", extraControls, NULL);
+	gst_structure_free(extraControls);
 }
 
 NanoVideoWindow *nanovideo_windowNew(GtkApplication *app)
