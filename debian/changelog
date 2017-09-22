@@ -1,3 +1,9 @@
+nano-video (0.4) unstable; urgency=low
+
+  * Added window with controls
+
+ -- Rafal <fatwildcat@gmail.com>  Fri, 22 Sep 2017 15:00:01 +0200
+
 nano-video (0.3) unstable; urgency=low
 
   * Fixed SEGV occuring when clipboard is empty
