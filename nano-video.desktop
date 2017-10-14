@@ -7,4 +7,4 @@ Icon=nano-video
 Terminal=false
 StartupNotify=true
 Categories=Video
-MimeType=video/mp4
+MimeType=video/mp4;video/x-matroska;video/webm
