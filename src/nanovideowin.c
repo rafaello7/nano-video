@@ -140,7 +140,9 @@ static void element_setup(GstElement *object, GstElement *arg0,
 	 * of each element but the video decoder device stores decoded image
 	 * directly in buffer from v4l2sink pool.
 	 */
-	if( !strncmp(gst_object_get_name(GST_OBJECT(arg0)), "v4l2video", 9) ) {
+	if( !strncmp(gst_object_get_name(GST_OBJECT(arg0)), "v4l2video", 9) ||
+		!strncmp(gst_object_get_name(GST_OBJECT(arg0)), "v4l2h264dec", 11))
+	{
 		g_object_set(G_OBJECT(arg0), "capture-io-mode", 5, NULL);
 	}
 }
